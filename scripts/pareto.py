@@ -37,15 +37,26 @@ def template_match(template, image):
         (val_min, val_max, _, loc_max) = cv2.minMaxLoc(match)
         if temp_found is None or val_max>temp_found[0]:
             temp_found = (val_max, loc_max, ratio)
-    return val_max > min_thresh, val_max
+    #Get information from temp_found to cqompute x,y coordinate
+    if val_max > min_thresh:
+        print(val_max)
+        (_, loc_max, r) = temp_found
+        (x_start, y_start) = (int(loc_max[0] * r), int(loc_max[1] * r))
+        (x_end, y_end) = (int((loc_max[0] + width) * r), int((loc_max[1] + height) * r))
+        #Draw rectangle around the template
+        result = cv2.rectangle(main_image, (x_start, y_start), (x_end, y_end), (153, 22, 0), 5)
+    else:
+        result = image
+    return val_max > min_thresh, val_max, result
 
 def img_routine():
-    template = load_template()
+    template = load_template('template.png')
     summary = 0
     for i in range(5):
         img = cv2.imread('../img/pic-'+str(i)+'.jpg')
-        res, val_max = template_match(template, img)
+        res, val_max, res_img = template_match(template, img)
         print(res, val_max)
+        cv2.imwrite('../img/pic-'+'recognized-'+i+'.png', res_img)
         summary += int(res)
     return summary
 
