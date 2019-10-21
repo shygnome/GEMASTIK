@@ -1,6 +1,5 @@
 import imutils
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
 
@@ -10,7 +9,6 @@ from time import sleep
 def take_pic(camera):
     for i in range(5):
         camera.capture('../img/pic-'+str(i)+'.jpg')
-        sleep(0.2)
 
 def load_template(filename):
     #Open template and get canny
@@ -63,48 +61,29 @@ def img_routine():
     return summary
 
 def audio_routine():
-    #The following code comes from markjay4k as referenced below
-
+    # Configuration
     chunk=4096
     RATE=44100
-
     p=pyaudio.PyAudio()
 
     #input stream setup
     stream=p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=chunk)
 
-    # #the code below is from the pyAudio library documentation referenced below
-    # #output stream setup
-    # player=p.open(format = pyaudio.paInt16,rate=RATE,channels=1, output=True, frames_per_buffer=chunk)
-
-
-    plt.ion() # Stop matplotlib windows from blocking
-
-    # Setup figure, axis and initiate plot
-    fig, ax = plt.subplots()
-    xdata, ydata = [], []
-    ln, = ax.plot([], [], 'ro-')
-
-    while True:            #Used to continuously stream audio
-        
+    while True:
         data=np.fromstring(stream.read(chunk,exception_on_overflow = False),dtype=np.int16)
         # print(data.shape)
 
+        # FFT-freq
         data = data * np.hanning(len(data)) # smooth the FFT by windowing data
         fft = abs(np.fft.fft(data).real)
         fft = fft[:int(len(fft)/2)] # keep only first half
         freq = np.fft.fftfreq(chunk,1.0/RATE)
         freq = freq[:int(len(freq)/2)] # keep only first half
-        freqPeak = freq[np.where(fft==np.max(fft))[0][0]]+1
-        print("peak frequency: %d Hz"%freqPeak)
 
-        # uncomment this if you want to see what the freq vs FFT looks like
-        plt.plot(freq,fft)
-        plt.axis([0,4000,None,None])
-        plt.show()
-        plt.close()
-        
-        # player.write(data,chunk)
+        # 
+        freqPeak = freq[np.where(fft==np.max(fft))[0][0]]+1
+        print(freq)
+        print("peak frequency: %d Hz"%freqPeak)
         
     #closes streams
     stream.stop_stream()
