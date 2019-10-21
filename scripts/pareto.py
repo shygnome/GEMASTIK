@@ -24,7 +24,7 @@ def template_match(template, image):
     main_image = image
     gray_image = cv2.cvtColor(main_image, cv2.COLOR_BGR2GRAY)
     temp_found = None
-    min_thresh = 0.011
+    min_thresh = 0.015
     for scale in np.linspace(0.2, 1.0, 20)[::-1]:
         #resize the image and store the ratio
         resized_img = imutils.resize(gray_image, width = int(gray_image.shape[1] * scale))
@@ -38,7 +38,7 @@ def template_match(template, image):
         if temp_found is None or val_max>temp_found[0]:
             temp_found = (val_max, loc_max, ratio)
     #Get information from temp_found to cqompute x,y coordinate
-    if val_max > min_thresh:
+    if val_max < min_thresh:
         print(val_max)
         (_, loc_max, r) = temp_found
         (x_start, y_start) = (int(loc_max[0] * r), int(loc_max[1] * r))
@@ -47,7 +47,7 @@ def template_match(template, image):
         result = cv2.rectangle(main_image, (x_start, y_start), (x_end, y_end), (153, 22, 0), 5)
     else:
         result = image
-    return val_max > min_thresh, val_max, result
+    return val_max < min_thresh, val_max, result
 
 def img_routine():
     template = load_template('template.png')
@@ -92,6 +92,6 @@ def audio_routine():
 
 camera = PiCamera()
 camera.rotation = 270
-# take_pic(camera)
-# img_routine()
-audio_routine()
+take_pic(camera)
+img_routine()
+#audio_routine()
