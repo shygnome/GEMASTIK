@@ -1,5 +1,6 @@
 import imutils
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import pyaudio
 
@@ -72,14 +73,24 @@ def audio_routine():
     #input stream setup
     stream=p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=chunk)
 
-    #the code below is from the pyAudio library documentation referenced below
-    #output stream setup
-    player=p.open(format = pyaudio.paInt16,rate=RATE,channels=1, output=True, frames_per_buffer=chunk)
+    # #the code below is from the pyAudio library documentation referenced below
+    # #output stream setup
+    # player=p.open(format = pyaudio.paInt16,rate=RATE,channels=1, output=True, frames_per_buffer=chunk)
+
+
+    plt.ion() # Stop matplotlib windows from blocking
+
+    # Setup figure, axis and initiate plot
+    fig, ax = plt.subplots()
+    xdata, ydata = [], []
+    ln, = ax.plot([], [], 'ro-')
 
     while True:            #Used to continuously stream audio
+        
         data=np.fromstring(stream.read(chunk,exception_on_overflow = False),dtype=np.int16)
-        print(data)
-        player.write(data,chunk)
+        print(data.shape)
+        
+        # player.write(data,chunk)
         
     #closes streams
     stream.stop_stream()
