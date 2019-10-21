@@ -88,7 +88,21 @@ def audio_routine():
     while True:            #Used to continuously stream audio
         
         data=np.fromstring(stream.read(chunk,exception_on_overflow = False),dtype=np.int16)
-        print(data.shape)
+        # print(data.shape)
+
+        data = data * np.hanning(len(data)) # smooth the FFT by windowing data
+        fft = abs(np.fft.fft(data).real)
+        fft = fft[:int(len(fft)/2)] # keep only first half
+        freq = np.fft.fftfreq(CHUNK,1.0/RATE)
+        freq = freq[:int(len(freq)/2)] # keep only first half
+        freqPeak = freq[np.where(fft==np.max(fft))[0][0]]+1
+        print("peak frequency: %d Hz"%freqPeak)
+
+        # uncomment this if you want to see what the freq vs FFT looks like
+        plt.plot(freq,fft)
+        plt.axis([0,4000,None,None])
+        plt.show()
+        plt.close()
         
         # player.write(data,chunk)
         
