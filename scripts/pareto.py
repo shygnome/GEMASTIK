@@ -4,6 +4,7 @@ import numpy as np
 import pyaudio
 
 from picamera import PiCamera
+from scipy import signal
 from time import sleep
 
 def take_pic(camera):
@@ -81,6 +82,7 @@ def audio_routine():
         freq = freq[:int(len(freq)/2)] # keep only first half
 
         # 
+        f, t, Sxx = signal.spectrogram(freq)
         freqPeak = freq[np.where(fft==np.max(fft))[0][0]]+1
         print(freq)
         print("peak frequency: %d Hz"%freqPeak)
