@@ -1,6 +1,8 @@
 #!bin/usr/python3
 
 import logging
+import random
+import requests
 import threading
 import time
 
@@ -10,12 +12,24 @@ import wave
 
 from picamera import PiCamera
 
+DASHBOARD_URL = "http://pareto-iot.herokuapp.com/dashboard/"
+COUNTDOWN_URL = DASHBOARD_URL + "stop/"
 
-def krl_arrive_routine(secs=30):
+DEFAULT_COUNTDOWN = 60
+
+def krl_arrive_routine(secs=60):
     routines = [lower_palang, start_countdown, play_announcer]
-    t1 = threading.Thread(target=play_announcer)
-    t1.start()
-    t1.join()
+    args = [(), (secs,), (secs,)]
+
+    logging.info("KRL_ARR : start multi thread")
+    for i in range(len(routines)):
+        tx = threading.Thread(target=routines[i], args=args[i])
+        tx.start()
+    
+    logging.info("KRL_ARR : waiting for thread ", routines[i].__name__)
+    
+    for i in range(len(routines)):
+        tx.join()
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
@@ -27,10 +41,10 @@ def raise_palang():
     time.sleep(5)
     logging.info("Palang  : finished raising palang")
 
-def start_countdown():
-    logging.info("CntDwn  : starting")
-    time.sleep(3)
-    logging.info("CntDwn  : finishing")
+def start_countdown(secs):
+    logging.info("CntDwn  : starting GET request")
+    r = requests.get(url=COUNTDOWN_URL+secs)
+    logging.info("CntDwn  : finishing GET request with status code ", r.status_code)
 
 def play_announcer():
     logging.info("Speaker : starting")
@@ -70,14 +84,13 @@ def alarm_incoming_krl():
     logging.info("Comm    : finished alarming")
 
 def recognize_sound(frame, rate):
+    logging.info("RECSOUND: Calculating distance")
     return len(calculate_distance(rate, frame)) >= 2
 
 def calculate_distance(fs, data):
     #The minimun value for the sound to be recognized as a knock
     min_val = 10000
-    
-    print(fs)
-    print(data.shape)
+
     data_size = len(data)
     
     #The number of indexes on 0.15 seconds
@@ -138,7 +151,9 @@ def main():
             
             ## audio routine
             if recognize_sound(audio_frame, RATE):
-                krl_arrive_routine(np)
+                logging.info("Main    : Starting KRL arrive routine")
+                krl_arrive_routine(DEFAULT_COUNTDOWN + random.randint(-5, 5))
+                logging.info("Main    : Exiting KRL arrive routine")
             i = 0
             record_frame = []
     
