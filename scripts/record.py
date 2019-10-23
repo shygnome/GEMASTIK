@@ -6,7 +6,7 @@ import wave
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-CHUNK = 1024
+CHUNK = 512
 RECORD_SECONDS = 600
 WAVE_OUTPUT_FILENAME = "../sound/rekaman.wav"
 device_index = 2
@@ -31,7 +31,7 @@ print("recording started")
 Recordframes = []
 
 for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    data = stream.read(CHUNK)
+    data = stream.read(CHUNK, exception_on_overflow=True)
     Recordframes.append(data)
 print("recording stopped")
 

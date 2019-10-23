@@ -84,7 +84,7 @@ def audio_routine():
         # 
         f, t, Sxx = signal.spectrogram(freq)
         freqPeak = freq[np.where(fft==np.max(fft))[0][0]]+1
-        print(freq)
+        print(Sxx)
         print("peak frequency: %d Hz"%freqPeak)
         
     #closes streams
@@ -94,6 +94,6 @@ def audio_routine():
 
 camera = PiCamera()
 camera.rotation = 270
-take_pic(camera)
-img_routine()
-#audio_routine()
+#take_pic(camera)
+#img_routine()
+audio_routine()
