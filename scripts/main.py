@@ -4,19 +4,18 @@ import logging
 import threading
 import time
 
+import numpy as np
 import pyaudio
 import wave
 
 from picamera import PiCamera
 
 
-def krl_arrive_routine(record_frame, secs=30):
+def krl_arrive_routine(secs=30):
     routines = [lower_palang, start_countdown, play_announcer]
-    # t1 = threading.Thread(target=play_announcer)
-    # t1.start()
-    # t1.join()
-    
-    print(record_frame)
+    t1 = threading.Thread(target=play_announcer)
+    t1.start()
+    t1.join()
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
@@ -70,8 +69,36 @@ def alarm_incoming_krl():
     logging.info("Comm    : KERETA DATANG")
     logging.info("Comm    : finished alarming")
 
-def supervise():
-    pass
+def recognize_sound(frame, rate):
+    return len(calculate_distance(rate, frame)) >= 2
+
+def calculate_distance(fs, data):
+    #The minimun value for the sound to be recognized as a knock
+    min_val = 20000
+    
+    print(fs)
+    print(data.shape)
+    data_size = len(data)
+    
+    #The number of indexes on 0.15 seconds
+    focus_size = int(0.2 * fs)
+    
+    focuses = []
+    distances = []
+    idx = 0
+    
+    while idx < len(data):
+        if data[idx] > min_val:
+            mean_idx = idx + focus_size // 2
+            focuses.append(float(mean_idx) / data_size)
+            if len(focuses) > 1:
+                last_focus = focuses[-2]
+                actual_focus = focuses[-1]
+                distances.append(actual_focus - last_focus)
+            idx += focus_size
+        else:
+            idx += 1
+    return distances
 
 def main():
     logging.info("Main    : Start PARETO Main routine")
@@ -102,11 +129,16 @@ def main():
     record_frame = []
     while True:
         data = stream.read(CHUNK, exception_on_overflow=True)
+        data = np.fromstring(data, dtype=np.int16)
         record_frame.append(data)
         i += 1
 
         if i % FRAMERATE == 0:
-            krl_arrive_routine(b''.join(record_frame))
+            audio_frame = np.concatenate(record_frame)
+            
+            ## audio routine
+            if recognize_sound(audio_frame, RATE):
+                krl_arrive_routine(np)
             i = 0
             record_frame = []
     
