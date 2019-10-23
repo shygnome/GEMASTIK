@@ -12,8 +12,8 @@ import wave
 
 from picamera import PiCamera
 
-DASHBOARD_URL = "http://pareto-iot.herokuapp.com/dashboard/"
-COUNTDOWN_URL = DASHBOARD_URL + "stop/"
+DASHBOARD_URL = "https://pareto-iot.herokuapp.com/dashboard/"
+COUNTDOWN_URL = DASHBOARD_URL + "change/stop/"
 
 DEFAULT_COUNTDOWN = 60
 
@@ -26,7 +26,7 @@ def krl_arrive_routine(secs=60):
         tx = threading.Thread(target=routines[i], args=args[i])
         tx.start()
     
-    logging.info("KRL_ARR : waiting for thread ", routines[i].__name__)
+    logging.info("KRL_ARR : waiting for thread")
     
     for i in range(len(routines)):
         tx.join()
@@ -47,7 +47,7 @@ def start_countdown(secs):
     logging.info("CntDwn  : finishing GET request with status code ", r.status_code)
 
 def play_announcer(secs):
-    logging.info("Speaker : starting")
+    logging.info("Speaker : starting announcer")
 
     #define stream chunk   
     CHUNK = 512
@@ -76,7 +76,7 @@ def play_announcer(secs):
     #close PyAudio  
     p.terminate()
 
-    logging.info("Speaker : finishing")
+    logging.info("Speaker : exiting announcer")
 
 def alarm_incoming_krl():
     logging.info("Comm    : start alarming")
