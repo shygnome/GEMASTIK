@@ -4,12 +4,20 @@ import logging
 import threading
 import time
 
+import pyaudio
+import wave
+
 # from picamera import PiCamera
 
 
 def krl_arrive_routine(record_frame, secs=30):
     routines = [lower_palang, start_countdown, play_announcer]
-
+    t1 = threading.Thread(target=play_announcer)
+    t2 = threading.Thread(target=play_announcer)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
     print(record_frame)
 
 def lower_palang():
@@ -29,7 +37,34 @@ def start_countdown():
 
 def play_announcer():
     logging.info("Speaker : starting")
-    time.sleep(3)
+
+    #define stream chunk   
+    CHUNK = 512
+
+    #open a wav format music  
+    f = wave.open(r"/home/pi/Documents/GEMASTIK/scripts/rekaman-1.wav","rb")  
+    #instantiate PyAudio
+    p = pyaudio.PyAudio()  
+    #open stream  
+    stream = p.open(format = p.get_format_from_width(f.getsampwidth()),  
+                    channels = f.getnchannels(),  
+                    rate = f.getframerate(),  
+                    output = True)  
+    #read data  
+    data = f.readframes(CHUNK)  
+
+    #play stream  
+    while data:  
+        stream.write(data)  
+        data = f.readframes(CHUNK)  
+
+    #stop stream  
+    stream.stop_stream()  
+    stream.close()  
+
+    #close PyAudio  
+    p.terminate()
+
     logging.info("Speaker : finishing")
 
 def alarm_incoming_krl():
@@ -72,7 +107,6 @@ def main():
         # record_frame.append(data)
         record_frame.append(i)
         i += 1
-        
 
         if i % FRAMERATE == 0:
             krl_arrive_routine(record_frame)
