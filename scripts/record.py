@@ -6,9 +6,9 @@ import wave
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-CHUNK = 512
-RECORD_SECONDS = 5
-WAVE_OUTPUT_FILENAME = "../sound/recordedFile.wav"
+CHUNK = 1024
+RECORD_SECONDS = 600
+WAVE_OUTPUT_FILENAME = "../sound/rekaman.wav"
 device_index = 2
 audio = pyaudio.PyAudio()
 
@@ -21,7 +21,7 @@ for i in range(0, numdevices):
 
 print("-------------------------------------------------------------")
 
-index = (input())
+index = int(input())
 print("recording via index "+str(index))
 
 stream = audio.open(format=FORMAT, channels=CHANNELS,
