@@ -74,7 +74,7 @@ def recognize_sound(frame, rate):
 
 def calculate_distance(fs, data):
     #The minimun value for the sound to be recognized as a knock
-    min_val = 20000
+    min_val = 10000
     
     print(fs)
     print(data.shape)
@@ -128,7 +128,7 @@ def main():
 
     record_frame = []
     while True:
-        data = stream.read(CHUNK, exception_on_overflow=True)
+        data = stream.read(CHUNK, exception_on_overflow=False)
         data = np.fromstring(data, dtype=np.int16)
         record_frame.append(data)
         i += 1
