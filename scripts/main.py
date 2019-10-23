@@ -43,10 +43,10 @@ def raise_palang():
 
 def start_countdown(secs):
     logging.info("CntDwn  : starting GET request")
-    r = requests.get(url=COUNTDOWN_URL+secs)
+    r = requests.get(url=COUNTDOWN_URL+str(secs))
     logging.info("CntDwn  : finishing GET request with status code ", r.status_code)
 
-def play_announcer():
+def play_announcer(secs):
     logging.info("Speaker : starting")
 
     #define stream chunk   
