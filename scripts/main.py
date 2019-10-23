@@ -45,8 +45,9 @@ def main():
     logging.info("Main    : Set up configuration")
     
     ## Audio
-    CHUNK=4096
-    RATE=44100
+    # FORMAT = pyaudio.paInt16
+    CHUNK = 512
+    RATE = 44100
     # p = pyaudio.PyAudio()
     # stream = p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=CHUNK)
 
