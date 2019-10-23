@@ -7,17 +7,15 @@ import time
 import pyaudio
 import wave
 
-# from picamera import PiCamera
+from picamera import PiCamera
 
 
 def krl_arrive_routine(record_frame, secs=30):
     routines = [lower_palang, start_countdown, play_announcer]
-    t1 = threading.Thread(target=play_announcer)
-    t2 = threading.Thread(target=play_announcer)
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
+    # t1 = threading.Thread(target=play_announcer)
+    # t1.start()
+    # t1.join()
+    
     print(record_frame)
 
 def lower_palang():
@@ -42,7 +40,7 @@ def play_announcer():
     CHUNK = 512
 
     #open a wav format music  
-    f = wave.open(r"/home/pi/Documents/GEMASTIK/scripts/rekaman-1.wav","rb")  
+    f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-1.wav","rb")  
     #instantiate PyAudio
     p = pyaudio.PyAudio()  
     #open stream  
@@ -84,12 +82,12 @@ def main():
     CHUNK = 512
     RATE = 44100
     FRAMERATE = RATE // CHUNK
-    # p = pyaudio.PyAudio()
-    # stream = p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=CHUNK)
+    p = pyaudio.PyAudio()
+    stream = p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=CHUNK)
 
     ## Camera
-    # camera = PiCamera()
-    # camera.rotation = 270
+    camera = PiCamera()
+    camera.rotation = 270
 
     ## Dummy
     i = 0
@@ -103,13 +101,12 @@ def main():
 
     record_frame = []
     while True:
-        # data = stream.read(CHUNK, exception_on_overflow=True)
-        # record_frame.append(data)
-        record_frame.append(i)
+        data = stream.read(CHUNK, exception_on_overflow=True)
+        record_frame.append(data)
         i += 1
 
         if i % FRAMERATE == 0:
-            krl_arrive_routine(record_frame)
+            krl_arrive_routine(b''.join(record_frame))
             i = 0
             record_frame = []
     
