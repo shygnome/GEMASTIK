@@ -7,10 +7,10 @@ import time
 # from picamera import PiCamera
 
 
-def krl_arrive_routine(secs=30):
+def krl_arrive_routine(record_frame, secs=30):
     routines = [lower_palang, start_countdown, play_announcer]
 
-    print("Masuk pak eko")
+    print(record_frame)
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
@@ -48,6 +48,7 @@ def main():
     # FORMAT = pyaudio.paInt16
     CHUNK = 512
     RATE = 44100
+    FRAMERATE = RATE // CHUNK
     # p = pyaudio.PyAudio()
     # stream = p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=CHUNK)
 
@@ -64,12 +65,19 @@ def main():
 
     ##
     logging.info("Main    : Start SUPERVISION routine")
-    while True:
-        time.sleep(0.5)
-        i += 1
 
-        if i % 30 == 0:
-            krl_arrive_routine()
+    record_frame = []
+    while True:
+        # data = stream.read(CHUNK, exception_on_overflow=True)
+        # record_frame.append(data)
+        record_frame.append(i)
+        i += 1
+        
+
+        if i % FRAMERATE == 0:
+            krl_arrive_routine(record_frame)
+            i = 0
+            record_frame = []
     
     ##
     logging.info("Main    : Exiting Main routine")
