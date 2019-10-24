@@ -30,6 +30,9 @@ def krl_arrive_routine(secs=60):
     
     for i in range(len(routines)):
         tx.join()
+    
+    global onRail
+    onRail = False
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
@@ -44,7 +47,7 @@ def raise_palang():
 def start_countdown(secs):
     logging.info("CntDwn  : starting GET request")
     r = requests.get(url=COUNTDOWN_URL+str(secs))
-    logging.info("CntDwn  : finishing GET request with status code ", r.status_code)
+    logging.info("CntDwn  : finishing GET request with status code "+ str(r.status_code))
 
 def play_announcer(secs):
     logging.info("Speaker : starting announcer")
@@ -61,13 +64,17 @@ def play_announcer(secs):
                     channels = f.getnchannels(),  
                     rate = f.getframerate(),  
                     output = True)  
-    #read data  
-    data = f.readframes(CHUNK)  
-
-    #play stream  
-    while data:  
-        stream.write(data)  
+    
+    for i in range(secs//5):
+        #read data  
         data = f.readframes(CHUNK)  
+
+        #play stream  
+        while data:  
+            stream.write(data)  
+            data = f.readframes(CHUNK)  
+        
+        f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-1.wav","rb")
 
     #stop stream  
     stream.stop_stream()  
@@ -131,7 +138,7 @@ def main():
 
     ## Dummy
     i = 0
-    onRail = False
+    global onRail
     time.sleep(2)
 
     logging.info("Main    : Set up finished")
@@ -150,7 +157,7 @@ def main():
             audio_frame = np.concatenate(record_frame)
             
             ## audio routine
-            if recognize_sound(audio_frame, RATE):
+            if not onRail and recognize_sound(audio_frame, RATE):
                 logging.info("Main    : Starting KRL arrive routine")
                 krl_arrive_routine(DEFAULT_COUNTDOWN + random.randint(-5, 5))
                 logging.info("Main    : Exiting KRL arrive routine")
@@ -164,4 +171,5 @@ def main():
 if __name__ == '__main__':
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
+    onRail = False
     main()
