@@ -179,6 +179,8 @@ def img_routine():
     return summary
 
 def recognize_image(camera):
+    global cameraOnUse
+    cameraOnUse = True
     ## Camera
     camera = PiCamera()
     camera.rotation = 270
@@ -237,6 +239,7 @@ def main():
     arrive_routine = threading.Thread(target=krl_arrive_routine, args=(cnt_dwn,))
     passingby_routine = threading.Thread(target=krl_passby_routine, args=(0, ))
     global onRail
+    global cameraOnUse
     time.sleep(2)
 
     logging.info("Main    : Set up finished")
@@ -256,7 +259,7 @@ def main():
             audio_frame = np.concatenate(record_frame)
 
             ## camera routine
-            if onRail:
+            if onRail and not cameraOnUse:
                 camera_t = threading.Thread(target=recognize_image)
                 camera_t.start()
 
@@ -280,4 +283,5 @@ if __name__ == '__main__':
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     onRail = False
+    cameraOnUse = True
     main()
