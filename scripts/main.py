@@ -29,7 +29,7 @@ PATH_IMG = '../img/'
 TEMPLATE_IMG = 'template.png'
 
 # GPIO
-MY_GPIO = 17
+MY_GPIO = 4
 MY_SERVO = Servo(MY_GPIO)
 
 def krl_arrive_routine(secs=60):
@@ -179,6 +179,10 @@ def img_routine():
     return summary
 
 def recognize_image(camera):
+    ## Camera
+    camera = PiCamera()
+    camera.rotation = 270
+
     take_pic(camera)
     if img_routine() >= 2:
         stop_countdown(0)
@@ -227,10 +231,6 @@ def main():
     p = pyaudio.PyAudio()
     stream = p.open(format = pyaudio.paInt16,rate=RATE,channels=1, input_device_index = 2, input=True, frames_per_buffer=CHUNK)
 
-    ## Camera
-    camera = PiCamera()
-    camera.rotation = 270
-
     ## Dummy
     i = 0
     cnt_dwn = DEFAULT_COUNTDOWN + random.randint(-5, 5)
@@ -257,7 +257,7 @@ def main():
 
             ## camera routine
             if onRail:
-                camera_t = threading.Thread(target=recognize_image, args=(camera, ))
+                camera_t = threading.Thread(target=recognize_image)
                 camera_t.start()
 
             ## audio routine
