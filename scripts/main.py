@@ -257,7 +257,7 @@ def main():
                 logging.info("Main    : Starting KRL arrive routine")
                 arrive_routine.start()
                 logging.info("Main    : Exiting KRL arrive routine")
-            elif onRail and not recognize_sound(audio_frame, RATE) and recognize_image(camera):
+            elif onRail and not recognize_sound(audio_frame, RATE):
                 logging.info("Main    : Starting KRL passing by routine")
                 passingby_routine.start()
                 logging.info("Main    : Exiting KRL passing by routine")
