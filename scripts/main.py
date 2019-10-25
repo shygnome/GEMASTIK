@@ -22,7 +22,7 @@ ADA_COUNTDOWN_URL = DASHBOARD_URL + "change/ada/"
 SAFE_COUNTDOWN_URL = DASHBOARD_URL + "change/safe/"
 
 # Countdown
-DEFAULT_COUNTDOWN = 45
+DEFAULT_COUNTDOWN = 30
 
 # Camera
 PATH_IMG = '../img/'
@@ -177,10 +177,11 @@ def img_routine():
         print(res, val_max)
         summary += int(res)
     return summary
-
-def recognize_image(camera):
+    
+def recognize_image():
     global cameraOnUse
     cameraOnUse = True
+
     ## Camera
     camera = PiCamera()
     camera.rotation = 270
@@ -253,7 +254,6 @@ def main():
         data = np.fromstring(data, dtype=np.int16)
         record_frame.append(data)
         i += 1
-        logging.info("Main    : OnRail "+str(onRail)) 
 
         if i % FRAMERATE == 0:
             audio_frame = np.concatenate(record_frame)
