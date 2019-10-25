@@ -18,6 +18,7 @@ from picamera import PiCamera
 # Dashboard URL
 DASHBOARD_URL = "https://pareto-iot.herokuapp.com/dashboard/"
 STOP_COUNTDOWN_URL = DASHBOARD_URL + "change/stop/"
+ADA_COUNTDOWN_URL = DASHBOARD_URL + "change/ada/"
 SAFE_COUNTDOWN_URL = DASHBOARD_URL + "change/safe/"
 
 # Countdown
@@ -55,7 +56,7 @@ def krl_passby_routine(secs=60):
     global onRail
     onRail = False
 
-    routines = [raise_palang, start_countdown]
+    routines = [raise_palang, stop_countdown]
     args = [(), (0,)]
 
     logging.info("KRL_PASS: start multi thread")
@@ -67,6 +68,8 @@ def krl_passby_routine(secs=60):
     
     for i in range(len(routines)):
         tx.join()
+    
+    r = requests.get(url=SAFE_COUNTDOWN_URL+str(0))
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
@@ -87,10 +90,12 @@ def start_countdown(secs):
 
 def stop_countdown(secs):
     logging.info("CntDwn  : starting GET request")
-    r = requests.get(url=STOP_COUNTDOWN_URL+str(0))
+    r = requests.get(url=ADA_COUNTDOWN_URL+str(0))
     logging.info("CntDwn  : finishing GET request with status code "+ str(r.status_code))
 
 def play_announcer(secs):
+    global onRail
+
     logging.info("Speaker : starting announcer")
 
     #define stream chunk   
@@ -109,6 +114,7 @@ def play_announcer(secs):
     for i in range(secs//5):
         if (not onRail):
             break
+        
         f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-{0}.wav".format((i % 4)),"rb")
 
         #read data  
@@ -160,7 +166,7 @@ def template_match(template, image):
         (val_min, val_max, _, loc_max) = cv2.minMaxLoc(match)
         if temp_found is None or val_max>temp_found[0]:
             temp_found = (val_max, loc_max, ratio)
-    return val_max < min_thresh, val_max
+    return val_max > min_thresh, val_max
 
 def img_routine():
     template = load_template(TEMPLATE_IMG)
@@ -174,7 +180,7 @@ def img_routine():
 
 def recognize_image(camera):
     take_pic(camera)
-    return img_routine() > 2
+    return img_routine() >= 2
 
 def recognize_sound(frame, rate):
     logging.info("RECSOUND: Calculating distance")
