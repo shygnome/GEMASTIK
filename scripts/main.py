@@ -180,7 +180,10 @@ def img_routine():
 
 def recognize_image(camera):
     take_pic(camera)
-    return img_routine() >= 2
+    if img_routine() >= 2:
+        stop_countdown(0)
+        global onRail
+        onRail = False
 
 def recognize_sound(frame, rate):
     logging.info("RECSOUND: Calculating distance")
@@ -251,7 +254,12 @@ def main():
 
         if i % FRAMERATE == 0:
             audio_frame = np.concatenate(record_frame)
-            
+
+            ## camera routine
+            if onRail:
+                camera_t = threading.Thread(target=recognize_image, args=(camera, ))
+                camera_t.start()
+
             ## audio routine
             if not onRail and recognize_sound(audio_frame, RATE):
                 logging.info("Main    : Starting KRL arrive routine")
