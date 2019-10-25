@@ -32,7 +32,7 @@ TEMPLATE_IMG = 'template.png'
 #MY_GPIO = 4
 #MY_SERVO = Servo(MY_GPIO)
 
-def krl_arrive_routine(secs=60, stop):
+def krl_arrive_routine(secs=60, stop=None):
     global onRail
     onRail = True
     
