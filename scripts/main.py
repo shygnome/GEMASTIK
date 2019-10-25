@@ -178,7 +178,8 @@ def img_routine():
         summary += int(res)
     return summary
     
-def recognize_image():
+def recognize_image(thread):
+    logging.info("RECIMAGE: Take pictures")
     global cameraOnUse
     cameraOnUse = True
 
@@ -188,9 +189,9 @@ def recognize_image():
 
     take_pic(camera)
     if img_routine() >= 2:
-        stop_countdown(0)
-        global onRail
-        onRail = False
+        logging.info("RECIMAGE: Kereta recognized")
+        thread.start()
+    logging.info("RECIMAGE: Exiting RECIMAGE")
 
 def recognize_sound(frame, rate):
     logging.info("RECSOUND: Calculating distance")
@@ -260,7 +261,7 @@ def main():
 
             ## camera routine
             if onRail and not cameraOnUse:
-                camera_t = threading.Thread(target=recognize_image)
+                camera_t = threading.Thread(target=recognize_image, args=(passingby_routine,))
                 camera_t.start()
 
             ## audio routine
