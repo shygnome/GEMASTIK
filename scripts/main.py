@@ -32,6 +32,9 @@ MY_GPIO = 17
 MY_SERVO = Servo(MY_GPIO)
 
 def krl_arrive_routine(secs=60):
+    global onRail
+    onRail = True
+    
     routines = [lower_palang, start_countdown, play_announcer]
     args = [(), (secs,), (secs-15,)]
 
@@ -45,7 +48,6 @@ def krl_arrive_routine(secs=60):
     for i in range(len(routines)):
         tx.join()
     
-    global onRail
     onRail = False
 
 def krl_passby_routine(secs=60):
