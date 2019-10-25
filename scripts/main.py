@@ -107,6 +107,8 @@ def play_announcer(secs):
                     output = True)  
     
     for i in range(secs//5):
+        if (not onRail):
+            break
         f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-{0}.wav".format((i % 4)),"rb")
 
         #read data  
@@ -239,6 +241,7 @@ def main():
         data = np.fromstring(data, dtype=np.int16)
         record_frame.append(data)
         i += 1
+        logging.info("Main    : OnRail "+str(onRail)) 
 
         if i % FRAMERATE == 0:
             audio_frame = np.concatenate(record_frame)
