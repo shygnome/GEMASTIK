@@ -32,7 +32,7 @@ TEMPLATE_IMG = 'template.png'
 #MY_GPIO = 4
 #MY_SERVO = Servo(MY_GPIO)
 
-def krl_arrive_routine(secs=60):
+def krl_arrive_routine(secs=60, stop):
     global onRail
     onRail = True
     
@@ -47,7 +47,7 @@ def krl_arrive_routine(secs=60):
     logging.info("KRL_ARR : waiting for thread")
     
     for i in range(len(routines)):
-        if not onRail:
+        if stop():
             break
         tx.join()
     
@@ -55,8 +55,10 @@ def krl_arrive_routine(secs=60):
 
 def krl_passby_routine(secs=60):
     # onRail
+    global stopArrive
     global onRail
     onRail = False
+    stopArrive = False
 
     routines = [raise_palang, stop_countdown]
     args = [(), (0,)]
@@ -241,11 +243,12 @@ def main():
 
     ## Dummy
     i = 0
-    cnt_dwn = DEFAULT_COUNTDOWN + random.randint(-5, 5)
-    arrive_routine = threading.Thread(target=krl_arrive_routine, args=(cnt_dwn,))
-    passingby_routine = threading.Thread(target=krl_passby_routine, args=(0, ))
+    global stopArrive
     global onRail
     global cameraOnUse
+    cnt_dwn = DEFAULT_COUNTDOWN + random.randint(-5, 5)
+    arrive_routine = threading.Thread(target=krl_arrive_routine, args=(cnt_dwn, stopArrive))
+    passingby_routine = threading.Thread(target=krl_passby_routine, args=(0, ))
     time.sleep(2)
 
     logging.info("Main    : Set up finished")
@@ -287,6 +290,7 @@ def main():
 if __name__ == '__main__':
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
+    stopArrive = False
     onRail = False
-    cameraOnUse = True
+    cameraOnUse = False
     main()
