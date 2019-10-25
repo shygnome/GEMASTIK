@@ -29,8 +29,8 @@ PATH_IMG = '../img/'
 TEMPLATE_IMG = 'template.png'
 
 # GPIO
-MY_GPIO = 4
-MY_SERVO = Servo(MY_GPIO)
+#MY_GPIO = 4
+#MY_SERVO = Servo(MY_GPIO)
 
 def krl_arrive_routine(secs=60):
     global onRail
@@ -47,6 +47,8 @@ def krl_arrive_routine(secs=60):
     logging.info("KRL_ARR : waiting for thread")
     
     for i in range(len(routines)):
+        if not onRail:
+            break
         tx.join()
     
     onRail = False
@@ -73,13 +75,15 @@ def krl_passby_routine(secs=60):
 
 def lower_palang():
     logging.info("Palang  : start lowering palang")
-    MY_SERVO.min()
+    servo = Servo(4)
+    servo.min()
     time.sleep(1)
     logging.info("Palang  : finished lowering palang")
 
 def raise_palang():
     logging.info("Palang  : start raising palang")
-    MY_SERVO.max()
+    servo = Servo(4)
+    servo.max()
     time.sleep(1)
     logging.info("Palang  : finished raising palang")
 
