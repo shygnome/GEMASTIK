@@ -6,20 +6,34 @@ import requests
 import threading
 import time
 
+import cv2
+import imutils
 import numpy as np
 import pyaudio
 import wave
 
+from gpiozero import Servo
 from picamera import PiCamera
 
+# Dashboard URL
 DASHBOARD_URL = "https://pareto-iot.herokuapp.com/dashboard/"
-COUNTDOWN_URL = DASHBOARD_URL + "change/stop/"
+STOP_COUNTDOWN_URL = DASHBOARD_URL + "change/stop/"
+SAFE_COUNTDOWN_URL = DASHBOARD_URL + "change/safe/"
 
-DEFAULT_COUNTDOWN = 60
+# Countdown
+DEFAULT_COUNTDOWN = 45
+
+# Camera
+PATH_IMG = '../img/'
+TEMPLATE_IMG = 'template.png'
+
+# GPIO
+MY_GPIO = 17
+MY_SERVO = Servo(MY_GPIO)
 
 def krl_arrive_routine(secs=60):
     routines = [lower_palang, start_countdown, play_announcer]
-    args = [(), (secs,), (secs,)]
+    args = [(), (secs,), (secs-15,)]
 
     logging.info("KRL_ARR : start multi thread")
     for i in range(len(routines)):
@@ -34,19 +48,44 @@ def krl_arrive_routine(secs=60):
     global onRail
     onRail = False
 
+def krl_passby_routine(secs=60):
+    # onRail
+    global onRail
+    onRail = False
+
+    routines = [raise_palang, start_countdown]
+    args = [(), (0,)]
+
+    logging.info("KRL_PASS: start multi thread")
+    for i in range(len(routines)):
+        tx = threading.Thread(target=routines[i], args=args[i])
+        tx.start()
+    
+    logging.info("KRL_PASS: waiting for thread")
+    
+    for i in range(len(routines)):
+        tx.join()
+
 def lower_palang():
     logging.info("Palang  : start lowering palang")
-    time.sleep(5)
+    MY_SERVO.min()
+    time.sleep(1)
     logging.info("Palang  : finished lowering palang")
 
 def raise_palang():
     logging.info("Palang  : start raising palang")
-    time.sleep(5)
+    MY_SERVO.max()
+    time.sleep(1)
     logging.info("Palang  : finished raising palang")
 
 def start_countdown(secs):
     logging.info("CntDwn  : starting GET request")
-    r = requests.get(url=COUNTDOWN_URL+str(secs))
+    r = requests.get(url=STOP_COUNTDOWN_URL+str(secs))
+    logging.info("CntDwn  : finishing GET request with status code "+ str(r.status_code))
+
+def stop_countdown(secs):
+    logging.info("CntDwn  : starting GET request")
+    r = requests.get(url=STOP_COUNTDOWN_URL+str(0))
     logging.info("CntDwn  : finishing GET request with status code "+ str(r.status_code))
 
 def play_announcer(secs):
@@ -66,6 +105,8 @@ def play_announcer(secs):
                     output = True)  
     
     for i in range(secs//5):
+        f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-{0}.wav".format((i % 4)),"rb")
+
         #read data  
         data = f.readframes(CHUNK)  
 
@@ -73,8 +114,6 @@ def play_announcer(secs):
         while data:  
             stream.write(data)  
             data = f.readframes(CHUNK)  
-        
-        f = wave.open(r"/home/pi/Documents/GEMASTIK/sound/rekaman-1.wav","rb")
 
     #stop stream  
     stream.stop_stream()  
@@ -85,10 +124,53 @@ def play_announcer(secs):
 
     logging.info("Speaker : exiting announcer")
 
-def alarm_incoming_krl():
-    logging.info("Comm    : start alarming")
-    logging.info("Comm    : KERETA DATANG")
-    logging.info("Comm    : finished alarming")
+
+def take_pic(camera):
+    for i in range(5):
+        camera.capture(PATH_IMG+'pic-'+str(i)+'.jpg')
+
+def load_template(filename):
+    #Open template and get canny
+    template = PATH_IMG + filename
+    template = cv2.imread(template)
+    template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    template = cv2.Canny(template, 10, 25)
+    return template
+
+def template_match(template, image):
+    (height, width) = template.shape[:2]
+    #open the main image and convert it to gray scale image
+    main_image = image
+    gray_image = cv2.cvtColor(main_image, cv2.COLOR_BGR2GRAY)
+    temp_found = None
+    min_thresh = 0.015
+    for scale in np.linspace(0.2, 1.0, 20)[::-1]:
+        #resize the image and store the ratio
+        resized_img = imutils.resize(gray_image, width = int(gray_image.shape[1] * scale))
+        ratio = gray_image.shape[1] / float(resized_img.shape[1])
+        if resized_img.shape[0] < height or resized_img.shape[1] < width:
+            break
+        #Convert to edged image for checking
+        e = cv2.Canny(resized_img, 10, 25)
+        match = cv2.matchTemplate(e, template, cv2.TM_CCOEFF_NORMED)
+        (val_min, val_max, _, loc_max) = cv2.minMaxLoc(match)
+        if temp_found is None or val_max>temp_found[0]:
+            temp_found = (val_max, loc_max, ratio)
+    return val_max < min_thresh, val_max
+
+def img_routine():
+    template = load_template(TEMPLATE_IMG)
+    summary = 0
+    for i in range(5):
+        img = cv2.imread(PATH_IMG+'pic-'+str(i)+'.jpg')
+        res, val_max = template_match(template, img)
+        print(res, val_max)
+        summary += int(res)
+    return summary
+
+def recognize_image(camera):
+    take_pic(camera)
+    return img_routine() > 2
 
 def recognize_sound(frame, rate):
     logging.info("RECSOUND: Calculating distance")
@@ -138,6 +220,9 @@ def main():
 
     ## Dummy
     i = 0
+    cnt_dwn = DEFAULT_COUNTDOWN + random.randint(-5, 5)
+    arrive_routine = threading.Thread(target=krl_arrive_routine, args=(cnt_dwn,))
+    passingby_routine = threading.Thread(target=krl_passby_routine, args=(0, ))
     global onRail
     time.sleep(2)
 
@@ -159,8 +244,12 @@ def main():
             ## audio routine
             if not onRail and recognize_sound(audio_frame, RATE):
                 logging.info("Main    : Starting KRL arrive routine")
-                krl_arrive_routine(DEFAULT_COUNTDOWN + random.randint(-5, 5))
+                arrive_routine.start()
                 logging.info("Main    : Exiting KRL arrive routine")
+            elif onRail and not recognize_sound(audio_frame, RATE) and recognize_image(camera):
+                logging.info("Main    : Starting KRL passing by routine")
+                passingby_routine.start()
+                logging.info("Main    : Exiting KRL passing by routine")
             i = 0
             record_frame = []
     
